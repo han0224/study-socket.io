@@ -16,10 +16,22 @@ export default function LoginContainer() {
   // 소켓 서버에서 사용자 이름 유효성 검사를 확인 후 오류가 없다면 콜백 호출
   useEffect(() => {
     socket.on("connect_error", (err) => {
-      if (err.message === "invalid username") {
-        console.log("err");
+      if (err.message === "invalid userName") {
+        console.log("err", err);
       }
     });
+  }, []);
+
+  // 로그인 성공시 connect-success event 받음
+  // 해당 이벤트를 받아야지만 post 페이지로 이동
+  useEffect(() => {
+    const goPage = () => {
+      navigate("/post");
+    };
+    socket.on("connect-success", goPage);
+    return () => {
+      socket.off("connect-success", goPage);
+    };
   }, []);
 
   const setUserNameHandler = (e) => {
@@ -33,14 +45,16 @@ export default function LoginContainer() {
   // 서버 사이드에서 먼저 살펴봤던 handshake 속성의 auth 부분을 추가
   // socket.auth 라는 객체에 userName 설정
   const onLoginHandler = (e) => {
+    console.log("on login handler");
     e.preventDefault();
     dispatch({
       type: AUTH_INFO,
       payload: user,
     });
     socket.auth = { userName: user };
-    socket.connect();
-    navigate("/post");
+    const a = socket.connect();
+    console.log(a);
+    // navigate("/post");
   };
 
   return (
