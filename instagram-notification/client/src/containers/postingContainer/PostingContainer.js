@@ -34,7 +34,7 @@ export default function PostingContainer() {
       <div>
         <Navbar />
         {post.map((p) => (
-          <Card key={p.id} post={p} loginUser={userName} />
+          <Card key={p.id} id={p.id} post={p} loginUser={userName} />
         ))}
       </div>
     </div>

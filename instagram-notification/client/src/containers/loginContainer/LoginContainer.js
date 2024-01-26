@@ -19,6 +19,9 @@ export default function LoginContainer() {
       if (err.message === "invalid userName") {
         console.log("err", err);
       }
+      if (err.message === "existing userName") {
+        console.log("err", err);
+      }
     });
   }, []);
 

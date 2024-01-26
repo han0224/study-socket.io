@@ -7,28 +7,28 @@ import { FiMoreVertical } from "react-icons/fi";
 import { socket } from "../../socket";
 import styles from "./Card.module.css";
 
-// key: 리스트 구분
+// id: 리스트 구분
 // post: post 객체
 // loginUser: 로그인한 사용자 이름
-export default function Card({ key, post, loginUser }) {
+export default function Card({ id, post, loginUser }) {
   // 좋아요상태
   const [liked, setLiked] = useState(false);
-
   // 좋아요 버튼 클릭 시
   // 눌렀으면 sendNotification 소켓 이벤트 실행
   // 누른 사람과 좋아요를 받은 사람 정보 전송
   const onLikeHandler = (e) => {
     const { type } = e.target.closest("svg").dataset;
+    console.log("like handler - ", type === "0");
     setLiked(type === "0");
     socket.emit("sendNotification", {
       senderName: loginUser,
       receiverName: post.userName,
-      type,
+      type: type === "0",
     });
   };
 
   return (
-    <div className={styles.card} key={key}>
+    <div className={styles.card} key={id}>
       <div className={styles.info}>
         <div className={styles.userInfo}>
           <img src={post.userImg} alt="" className={styles.userImg} />
