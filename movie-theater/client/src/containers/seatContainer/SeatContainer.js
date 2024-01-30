@@ -52,6 +52,12 @@ export default function SeatContainer() {
     setSeats(tempSeats);
   };
 
+  const onCancelHandler = (e) => {
+    if (!booked) return;
+    socket.emit("cancelSeat", booked);
+    setBooked("");
+    setIsDisabled(false);
+  };
   // 최종적으로 선택된 좌석
   const onConfirmHandler = () => {
     if (!booked) return;
@@ -83,9 +89,13 @@ export default function SeatContainer() {
       </ul>
       <div className={cx("r_wrap")}>
         <h4 className={cx("r_title")}>{booked}</h4>
-        {!isDisabled && (
+        {!isDisabled ? (
           <button className={cx("r_confirm")} onClick={onConfirmHandler}>
             Confirm
+          </button>
+        ) : (
+          <button className={cx("r_confirm")} onClick={onCancelHandler}>
+            cancel
           </button>
         )}
       </div>
