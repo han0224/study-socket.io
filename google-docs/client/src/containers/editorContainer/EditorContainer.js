@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 // 라우팅으로 생성된 uuid 값을 가져옴
 import { useParams } from "react-router-dom";
 import { debounce } from "lodash-es";
-import TextEditor from "../../components/textEditor/TextEditor";
 import { socket } from "../../socket";
+import { TextEditor, Button } from "../../components";
 
 // 다양한 사용자의 실시간 커서 위치 반영하기 위해
 const cursorMap = new Map();
@@ -25,6 +25,7 @@ export default function EditorContainer() {
   // 3
   const { id: documentId } = useParams();
   const [text, setText] = useState("");
+  const url = window.location.href;
 
   // 4
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function EditorContainer() {
   useEffect(() => {
     const setCursorHandler = (user) => {
       setCursor(user);
+      console.log(cursorMap);
     };
     socket.on("newUser", setCursorHandler);
     return () => {
@@ -132,12 +134,52 @@ export default function EditorContainer() {
     socket.emit("cursor-changes", selection);
   };
 
+  const copyString = (string) => {
+    console.log(string);
+    // copy 하는 방법 queryCommandSupported이용, clipboard-api 이용
+    // queryCommandSupported는 deprecated 상태
+    // => 그래서 clipboard-api 이용
+    // 단, ie 사용 못함 크롬은 66버전 이상, https or localhost 환경에서만 동작
+    // https://kyounghwan01.github.io/blog/React/clipboard-copy/#%E1%84%92%E1%85%B3%E1%84%85%E1%85%B3%E1%86%B7
+    // 위 링크 참고
+
+    if (navigator.clipboard) {
+      console.log("navigator clipboard");
+      navigator.clipboard
+        .writeText(string)
+        .then(() => alert("복사되었습니다."))
+        .catch(() => alert("복사에 실패했습니다."));
+    } else {
+      // 브라우저가 clipboard-api 사용할 수 없는 경우
+
+      if (!document.queryCommandSupported("copy")) {
+        return alert("복사하기를 지원하지 않는 브라우저입니다.");
+      }
+
+      const textarea = document.createElement("textarea");
+      textarea.value = string;
+      textarea.style.top = 0;
+      textarea.style.left = 0;
+      textarea.style.position = "fixed";
+
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      alert("복사되었습니다.");
+    }
+  };
+
   return (
-    <TextEditor
-      text={text}
-      onChangeTextHandler={onChangeTextHandler}
-      onChangeSelection={onChangeSelection}
-      reactQuillRef={reactQuillRef}
-    />
+    <>
+      <Button onClick={() => copyString(url)}>copy link</Button>
+      <TextEditor
+        text={text}
+        onChangeTextHandler={onChangeTextHandler}
+        onChangeSelection={onChangeSelection}
+        reactQuillRef={reactQuillRef}
+      />
+    </>
   );
 }
