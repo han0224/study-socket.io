@@ -195,7 +195,7 @@ export default function EditorContainer() {
           padding: "0 2rem",
         }}
       >
-        <Button onClick={() => copyString(url)}>copy link</Button>
+        <Button onClick={() => copyString(documentId)}>copy link</Button>
         <UserList userList={Array.from(viewUsers)} />
       </div>
       <TextEditor
