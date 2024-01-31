@@ -33,6 +33,7 @@ export default function EditorContainer() {
   // 4
   useEffect(() => {
     socket.emit("join", documentId);
+    console.log("!@#!#!#!");
     return () => {
       socket.disconnect();
     };
