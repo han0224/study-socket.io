@@ -35,8 +35,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("save-document", async (data) => {
-    console.log(data);
-
     await Document.findByIdAndUpdate(_documentId, { data });
   });
 
@@ -51,8 +49,16 @@ io.on("connection", (socket) => {
       .emit("receive-cursor", { range, id: myRooms[0] });
   });
 
-  socket.on("disconnection", () => {
-    console.log("logout");
+  socket.on("disconnect", () => {
+    console.log("logout", socket.id, _documentId);
+    deleteUser(_documentId, socket.id);
+
+    socket.broadcast
+      .to(_documentId)
+      .emit("delete-user", {
+        userList: userMap.get(_documentId),
+        id: socket.id,
+      });
   });
 });
 
@@ -63,6 +69,18 @@ const setUserMap = (documentId, myId) => {
   } else {
     userMap.set(documentId, [...tempUserList, myId]);
   }
+};
+
+const deleteUser = (documentId, myId) => {
+  const tempUserList = userMap.get(documentId);
+
+  if (!tempUserList) return;
+  userMap.set(
+    documentId,
+    tempUserList.filter((user) => user !== myId)
+  );
+
+  userMap.get(documentId).length || userMap.delete(documentId);
 };
 
 const findOrCreateDocument = async (id) => {

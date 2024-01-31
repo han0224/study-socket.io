@@ -4,6 +4,8 @@ import { useParams } from "react-router-dom";
 import { debounce } from "lodash-es";
 import { socket } from "../../socket";
 import { TextEditor, Button } from "../../components";
+import UserList from "../../components/UserList";
+import { css } from "@emotion/react";
 
 // 다양한 사용자의 실시간 커서 위치 반영하기 위해
 const cursorMap = new Map();
@@ -26,6 +28,7 @@ export default function EditorContainer() {
   const { id: documentId } = useParams();
   const [text, setText] = useState("");
   const url = window.location.href;
+  const [viewUsers, setViewUsers] = useState([]);
 
   // 4
   useEffect(() => {
@@ -50,14 +53,27 @@ export default function EditorContainer() {
   // 새로운 사용자 접속
   useEffect(() => {
     const setCursorHandler = (user) => {
+      console.log("new user");
+      //   setViewUsers((prev) => [...prev, user]);
       setCursor(user);
-      console.log(cursorMap);
     };
     socket.on("newUser", setCursorHandler);
     return () => {
       socket.off("newUser", setCursorHandler);
     };
   }, []);
+
+  useEffect(() => {
+    const deleteUser = (res) => {
+      const { userList, id } = res;
+      setViewUsers((prev) => prev.filter((user) => user.id !== id));
+      cursorRef.current.removeCursor(id);
+    };
+    socket.on("delete-user", deleteUser);
+    return () => {
+      socket.off("delete-user", deleteUser);
+    };
+  });
 
   // quill-cursors 모듈 설정
   useEffect(() => {
@@ -111,13 +127,11 @@ export default function EditorContainer() {
   // 커서 생성, cursorMap 객체에 저장
   // createCursor: quill-cursors에서 제공되는 함수, 색상과 id 정의
   const setCursor = (id) => {
+    const color = cursorColor[Math.floor(Math.random() * 8)];
     if (!cursorMap.get(id)) {
-      cursorRef.current.createCursor(
-        id,
-        id,
-        cursorColor[Math.floor(Math.random() * 8)]
-      );
+      cursorRef.current.createCursor(id, id, color);
       cursorMap.set(id, cursorRef.current);
+      setViewUsers((prev) => [...prev, { id, color }]);
     }
   };
 
@@ -125,6 +139,7 @@ export default function EditorContainer() {
   // debounce: 다수의 이벤트를 모았다 한번에 처리 ex) 브라우저 리사이즈
   // throttle: 일정한 주기를 기준으로 무조건 한번씩 ex) 스크롤링 이벤트
   const debounceUpdate = debounce((range, id) => {
+    if (!cursorMap.get(id)) return;
     cursorMap.get(id).moveCursor(id, range);
   }, 500);
 
@@ -135,7 +150,6 @@ export default function EditorContainer() {
   };
 
   const copyString = (string) => {
-    console.log(string);
     // copy 하는 방법 queryCommandSupported이용, clipboard-api 이용
     // queryCommandSupported는 deprecated 상태
     // => 그래서 clipboard-api 이용
@@ -173,7 +187,17 @@ export default function EditorContainer() {
 
   return (
     <>
-      <Button onClick={() => copyString(url)}>copy link</Button>
+      <div
+        css={{
+          display: "flex",
+          "justify-content": "space-between",
+          "align-items": "center",
+          padding: "0 2rem",
+        }}
+      >
+        <Button onClick={() => copyString(url)}>copy link</Button>
+        <UserList userList={Array.from(viewUsers)} />
+      </div>
       <TextEditor
         text={text}
         onChangeTextHandler={onChangeTextHandler}
